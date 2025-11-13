@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from './api.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
-  template: `<h1>{{ message }}</h1>`,
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
   message: string = '';
