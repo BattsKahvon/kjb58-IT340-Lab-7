@@ -2,6 +2,7 @@
     <span class="app-logo">The Modern Green Book</span>
     
     <div class="nav-actions">
+        <!-- Buttons are now clean, letting the HostListener catch the click -->
         <button class="login-nav-button">Log In</button>
         <button class="register-button">Register</button>
     </div>
@@ -13,6 +14,7 @@
             <h1>Explore the Modern Green Book</h1>
             <p>Connecting communities and highlighting Black-owned businesses across the nation.</p>
             
+            <!-- Main CTA is now clean -->
             <button class="login-cta">Log In</button> 
         </div>
     </div>
@@ -21,4 +23,62 @@
 <div class="main-section">
     <h2>Discover Safe & Welcoming Spaces</h2>
     <p>Your guide to empowerment, history, and community — all in one platform.</p>
+</div>
+
+
+<!-- Login Popup -->
+<!-- FIX: Switched from [style.display] to the more robust *ngIf structural directive -->
+<div id="login-popup" class="popup-container" *ngIf="isLoginPopupVisible">
+    <div class="popup-content">
+        <!-- Close button is clean, letting the HostListener catch the click -->
+        <span class="close-button">&times;</span>
+        <h2>Log In</h2>
+        <p>Become a part of our community!</p>
+        <form>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <div class="form-group remember-me">
+                <input type="checkbox" id="remember-me" name="remember-me">
+                <label for="remember-me">Remember Me</label>
+            </div>
+            <button type="submit" class="login-button">LOGIN</button>
+            <p class="forgot-password"><a href="#">Forgot your password? Get help</a></p>
+        </form>
+    </div>
+</div>
+
+<!-- Registration Popup -->
+<!-- FIX: Switched from [style.display] to the more robust *ngIf structural directive -->
+<div id="register-popup" class="popup-container" *ngIf="isRegisterPopupVisible">
+    <div class="popup-content">
+        <!-- Close button is clean, letting the HostListener catch the click -->
+        <span class="close-button">&times;</span>
+        <h2>Register</h2>
+        <p>Join our community today!</p>
+        <form>
+            <div class="form-group">
+                <label for="reg-username">Username</label>
+                <input type="text" id="reg-username" name="reg-username">
+            </div>
+            <div class="form-group">
+                <label for="reg-email">Email</label>
+                <input type="email" id="reg-email" name="reg-email">
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Password</label>
+                <input type="password" id="reg-password" name="reg-password">
+            </div>
+            <div class="form-group">
+                <label for="reg-confirm-password">Confirm Password</label>
+                <input type="password" id="reg-confirm-password" name="reg-confirm-password">
+            </div>
+            <button type="submit" class="register-submit-button">REGISTER</button>
+        </form>
+    </div>
 </div>
