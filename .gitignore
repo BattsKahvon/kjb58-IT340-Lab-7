@@ -1,0 +1,16 @@
+# Node modules (backend + frontend)
+backend/mean-stack-app/node_modules/
+frontend/mean-stack-frontend/node_modules/
+
+# Angular build
+frontend/mean-stack-frontend/dist/
+
+# Logs
+*.log
+
+# Env files
+*.env
+
+# OS junk
+.DS_Store
+Thumbs.db
