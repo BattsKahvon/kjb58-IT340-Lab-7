@@ -7,10 +7,6 @@
     </div>
 </nav>
 
-<p style="color: white; text-align:center; margin:0; padding:10px;">
-    Backend says: {{ message }}
-</p>
-
 <div class="hero">
     <div class="overlay">
         <div class="content">
@@ -33,6 +29,7 @@
         <h2>Log In</h2>
         <p>Become a part of our community!</p>
         <form>
+
             <div class="form-group">
                 <label for="username">Username</label>
                 <input id="username" type="text">
@@ -48,7 +45,9 @@
                 <label for="remember-me">Remember Me</label>
             </div>
 
-            <button type="submit" class="login-button">LOGIN</button>
+            <button type="button" class="login-button" (click)="loginUser()">
+                LOGIN
+            </button>
 
             <p class="forgot-password">
                 <a href="#">Forgot your password? Get help</a>
@@ -85,9 +84,21 @@
                 <input type="password" id="reg-confirm-password">
             </div>
 
-            <button class="register-submit-button" type="submit">
+            <button class="register-submit-button" type="button" (click)="registerUser()">
                 REGISTER
             </button>
         </form>
     </div>
 </div>
+
+<!-- ⚡ BACKEND STATUS BADGE (always at bottom) -->
+<p class="backend-status">
+    <span *ngIf="message && message !== 'Backend failed to connect'" class="status-ok">
+        🟢 Backend Connected
+    </span>
+
+    <span *ngIf="message === 'Backend failed to connect'" class="status-bad">
+        🔴 Backend Offline
+    </span>
+</p>
+

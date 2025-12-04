@@ -11,27 +11,86 @@ import { ApiService } from './api.service';
 })
 export class AppComponent {
 
-  // 🔥 Added so Angular stops complaining
   message: string = '';
 
   isLoginPopupVisible: boolean = false;
   isRegisterPopupVisible: boolean = false;
 
   constructor(private api: ApiService) {
-    // 🔥 Hit backend on load and store the message
+
+    // Test backend connectivity
     this.api.getMessage().subscribe({
       next: (res) => {
         console.log('Backend says:', res);
-        this.message = res.message || 'No message received';
+        this.message = res.message || 'No message';
       },
       error: (err) => {
-        console.error('Error contacting backend:', err);
-        this.message = 'Backend connection failed';
+        console.error('Backend error:', err);
+        this.message = 'Backend failed to connect';
       }
     });
   }
 
-  // Helper to match clicks on nested elements
+  // --------------------------
+  // REGISTER
+  // --------------------------
+  registerUser() {
+    const username = (document.getElementById('reg-username') as HTMLInputElement).value;
+    const email = (document.getElementById('reg-email') as HTMLInputElement).value;
+    const password = (document.getElementById('reg-password') as HTMLInputElement).value;
+    const confirm = (document.getElementById('reg-confirm-password') as HTMLInputElement).value;
+
+    if (!username || !email || !password) {
+      alert("All fields required.");
+      return;
+    }
+    if (password !== confirm) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    this.api.registerUser({ username, email, password }).subscribe({
+      next: (res) => {
+        console.log("REGISTER SUCCESS:", res);
+        alert("Registration successful!");
+        this.closeRegisterPopup();
+      },
+      error: (err) => {
+        console.error("REGISTER ERROR:", err);
+        alert("Registration failed.");
+      }
+    });
+  }
+
+  // --------------------------
+  // LOGIN
+  // --------------------------
+  loginUser() {
+    const username = (document.getElementById('username') as HTMLInputElement).value;
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+
+    if (!username || !password) {
+      alert("Both fields required.");
+      return;
+    }
+
+    this.api.loginUser({ username, password }).subscribe({
+      next: (res) => {
+        console.log("LOGIN SUCCESS:", res);
+        alert("Login successful!");
+        this.closeLoginPopup();
+      },
+      error: (err) => {
+        console.error("LOGIN ERROR:", err);
+        alert("Invalid username or password.");
+      }
+    });
+  }
+
+  // --------------------------
+  // Popup Logic
+  // --------------------------
+
   private findMatchingButton(target: HTMLElement | null, selector: string): boolean {
     let current: HTMLElement | null = target;
     while (current) {
@@ -46,21 +105,18 @@ export class AppComponent {
     const el = targetElement as HTMLElement | null;
     if (!el) return;
 
-    // Close button
     if (this.findMatchingButton(el, '.close-button')) {
       if (this.isLoginPopupVisible) this.closeLoginPopup();
       if (this.isRegisterPopupVisible) this.closeRegisterPopup();
       return;
     }
 
-    // Login triggers
     if (this.findMatchingButton(el, '.login-nav-button') ||
         this.findMatchingButton(el, '.login-cta')) {
       this.openLoginPopup();
       return;
     }
 
-    // Register trigger
     if (this.findMatchingButton(el, '.register-button')) {
       this.openRegisterPopup();
       return;

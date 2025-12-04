@@ -8,17 +8,23 @@ import { Observable } from 'rxjs';
 })
 export class ApiService {
 
-  private apiUrl = environment.apiUrl;  // points to VM2 backend
+  // Make sure API URL has NO trailing slash
+  private apiUrl = environment.apiUrl.replace(/\/$/, '');
 
   constructor(private http: HttpClient) {}
 
-  // GET request to backend root
+  /** TEST ROUTE */
   getMessage(): Observable<any> {
     return this.http.get(`${this.apiUrl}/`);
   }
 
-  // Example POST request
-  sendData(data: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/add`, data);
+  /** REGISTER USER */
+  registerUser(data: { username: string; email: string; password: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/api/register`, data);
+  }
+
+  /** LOGIN USER */
+  loginUser(data: { username: string; password: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/api/login`, data);
   }
 }
