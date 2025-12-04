@@ -7,11 +7,12 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = environment.apiUrl;   // points to http://localhost:3000
+
+  private apiUrl = environment.apiUrl;  // points to VM2 backend
 
   constructor(private http: HttpClient) {}
 
-  // Example GET request to Express
+  // GET request to backend root
   getMessage(): Observable<any> {
     return this.http.get(`${this.apiUrl}/`);
   }
@@ -19,6 +20,5 @@ export class ApiService {
   // Example POST request
   sendData(data: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/add`, data);
+  }
 }
-}
-  

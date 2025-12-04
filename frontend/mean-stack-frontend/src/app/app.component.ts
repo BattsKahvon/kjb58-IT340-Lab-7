@@ -1,5 +1,6 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ApiService } from './api.service';
 
 @Component({
   selector: 'app-root',
@@ -10,8 +11,25 @@ import { CommonModule } from '@angular/common';
 })
 export class AppComponent {
 
+  // 🔥 Added so Angular stops complaining
+  message: string = '';
+
   isLoginPopupVisible: boolean = false;
   isRegisterPopupVisible: boolean = false;
+
+  constructor(private api: ApiService) {
+    // 🔥 Hit backend on load and store the message
+    this.api.getMessage().subscribe({
+      next: (res) => {
+        console.log('Backend says:', res);
+        this.message = res.message || 'No message received';
+      },
+      error: (err) => {
+        console.error('Error contacting backend:', err);
+        this.message = 'Backend connection failed';
+      }
+    });
+  }
 
   // Helper to match clicks on nested elements
   private findMatchingButton(target: HTMLElement | null, selector: string): boolean {
