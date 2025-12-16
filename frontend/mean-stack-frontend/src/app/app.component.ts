@@ -1,11 +1,13 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from './api.service';
+import { RouterModule } from '@angular/router'; // ✅ NEW
+import { Router } from '@angular/router'; // NEW
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -16,7 +18,15 @@ export class AppComponent {
   isLoginPopupVisible: boolean = false;
   isRegisterPopupVisible: boolean = false;
 
-  constructor(private api: ApiService) {
+  isLoggedIn: boolean = false; // ✅ NEW
+
+  constructor(
+    private api: ApiService,
+    private router: Router // ✅ NEW
+  ) {
+
+    // Restore login state on refresh
+    this.isLoggedIn = localStorage.getItem('loggedIn') === 'true'; // ✅ NEW
 
     // Test backend connectivity
     this.api.getMessage().subscribe({
@@ -78,13 +88,30 @@ export class AppComponent {
       next: (res) => {
         console.log("LOGIN SUCCESS:", res);
         alert("Login successful!");
+
+        // ✅ AUTH STATE
+        this.isLoggedIn = true;
+        localStorage.setItem('loggedIn', 'true');
+
         this.closeLoginPopup();
+
+        // ✅ REDIRECT TO MAP
+        this.router.navigate(['/map']);
       },
       error: (err) => {
         console.error("LOGIN ERROR:", err);
         alert("Invalid username or password.");
       }
     });
+  }
+
+  // --------------------------
+  // LOGOUT (optional but good)
+  // --------------------------
+  logoutUser() {
+    this.isLoggedIn = false;
+    localStorage.removeItem('loggedIn');
+    this.router.navigate(['/']);
   }
 
   // --------------------------
