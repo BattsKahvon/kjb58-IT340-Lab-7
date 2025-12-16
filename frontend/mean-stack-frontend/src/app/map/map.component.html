@@ -5,20 +5,27 @@
     <button class="close-btn" (click)="toggleSidebar()">✕</button>
   </div>
 
-  <button class="sidebar-btn" (click)="openAddPopup()"> Add Business</button>
-  <button class="sidebar-btn danger" (click)="openDeletePopup()"> Delete Business</button>
-  <button class="sidebar-btn logout" (click)="logout()"> Log Out</button>
+  <button class="sidebar-btn" (click)="openAddPopup()">Add Business</button>
 
+  <!-- ✅ NEW: UPDATE BUSINESS -->
+  <button class="sidebar-btn" (click)="openUpdatePopup()">Update Business</button>
+
+  <button class="sidebar-btn danger" (click)="openDeletePopup()">Delete Business</button>
+
+  <button class="sidebar-btn logout" (click)="logout()">Log Out</button>
 </div>
+
 <!-- TOP SEARCH BAR (WHEN SIDEBAR CLOSED) -->
 <div class="top-search" *ngIf="!sidebarOpen">
   <button class="hamburger-btn" (click)="toggleSidebar()">☰</button>
   <input
-  type="text"
-  placeholder="Search GreenBook businesses"
-  [(ngModel)]="searchQuery"
-  (input)="filterBusinesses()"/>
+    type="text"
+    placeholder="Search GreenBook businesses"
+    [(ngModel)]="searchQuery"
+    (input)="filterBusinesses()"
+  />
 </div>
+
 <!-- MAP CONTAINER -->
 <div id="map"></div>
 
@@ -29,7 +36,9 @@
 
     <input placeholder="Name" [(ngModel)]="newBusiness.name">
     <input placeholder="Category" [(ngModel)]="newBusiness.category">
-    <input placeholder="Street Address (Example Adress)" [(ngModel)]="newBusiness.address">
+    <input placeholder="Street Address (Example Address)" [(ngModel)]="newBusiness.address">
+    <input placeholder="Hours" [(ngModel)]="newBusiness.hours">
+    <input placeholder="Contact Info" [(ngModel)]="newBusiness.contact">
 
     <label class="checkbox">
       <input type="checkbox" [(ngModel)]="newBusiness.verified">
@@ -38,6 +47,36 @@
 
     <div class="popup-actions">
       <button (click)="addBusiness()">Add</button>
+      <button class="cancel" (click)="closePopups()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ UPDATE BUSINESS POPUP -->
+<div class="popup" *ngIf="showUpdatePopup">
+  <div class="popup-content">
+    <h3>Update Business</h3>
+
+    <!-- SELECT BUSINESS -->
+    <select [(ngModel)]="selectedUpdateIndex">
+      <option *ngFor="let b of businesses; let i = index" [value]="i">
+        {{ b.name }}
+      </option>
+    </select>
+
+    <!-- UPDATE FIELDS -->
+    <input
+      placeholder="Updated Hours"
+      [(ngModel)]="updateForm.hours"
+    />
+
+    <input
+      placeholder="Updated Contact Info"
+      [(ngModel)]="updateForm.contact"
+    />
+
+    <div class="popup-actions">
+      <button (click)="updateBusiness()">Update</button>
       <button class="cancel" (click)="closePopups()">Cancel</button>
     </div>
   </div>

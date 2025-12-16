@@ -25,8 +25,10 @@ export class MapComponent implements AfterViewInit {
   // --------------------------
   sidebarOpen = true;
   showAddPopup = false;
+  showUpdatePopup = false;   // ✅ NEW
   showDeletePopup = false;
   selectedBusinessIndex = 0;
+  selectedUpdateIndex = 0;   // ✅ NEW
 
   // --------------------------
   // SEARCH STATE (NAME ONLY)
@@ -43,21 +45,27 @@ export class MapComponent implements AfterViewInit {
       lat: 40.7429,
       lng: -74.1725,
       category: "Restaurant",
-      verified: true
+      verified: true,
+      hours: "Mon–Fri 9am–5pm",
+      contact: "(973) 555-1234"
     },
     {
       name: "Baraka City Hall",
       lat: 40.7357,
       lng: -74.1724,
       category: "Community",
-      verified: true
+      verified: true,
+      hours: "Mon–Sat 10am–6pm",
+      contact: "info@barakanewark.org"
     },
     {
       name: "Newark Symphony Hall",
       lat: 40.7413,
       lng: -74.1687,
       category: "Arts",
-      verified: false
+      verified: false,
+      hours: "Event-based",
+      contact: "973-555-9876"
     }
   ];
 
@@ -68,13 +76,23 @@ export class MapComponent implements AfterViewInit {
     name: '',
     address: '',
     category: '',
-    verified: false
+    verified: false,
+    hours: '',
+    contact: ''
+  };
+
+  // --------------------------
+  // UPDATE BUSINESS FORM MODEL
+  // --------------------------
+  updateForm = {
+    hours: '',
+    contact: ''
   };
 
   constructor(private router: Router) {}
 
   // --------------------------
-  // INIT MAP
+  // INIT MAP (POIs HIDDEN)
   // --------------------------
   ngAfterViewInit(): void {
     const mapDiv = document.getElementById('map');
@@ -82,11 +100,14 @@ export class MapComponent implements AfterViewInit {
     if (!mapDiv || typeof google === 'undefined') return;
 
     this.map = new google.maps.Map(mapDiv, {
-      center: { lat: 40.7446, lng: -74.1802 }, // Newark
-      zoom: 14
+      center: { lat: 40.7446, lng: -74.1802 },
+      zoom: 14,
+      styles: [
+        { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+        { featureType: 'poi.business', stylers: [{ visibility: 'off' }] }
+      ]
     });
 
-    // Initialize filtered list
     this.filteredBusinesses = [...this.businesses];
     this.renderMarkers();
   }
@@ -95,12 +116,11 @@ export class MapComponent implements AfterViewInit {
   // MARKER RENDERING
   // --------------------------
   renderMarkers() {
-    // Clear old markers
     this.markers.forEach(m => m.setMap(null));
     this.markers = [];
 
-    // Render filtered businesses only
     this.filteredBusinesses.forEach(b => {
+
       const marker = new google.maps.Marker({
         position: { lat: b.lat, lng: b.lng },
         map: this.map,
@@ -108,6 +128,27 @@ export class MapComponent implements AfterViewInit {
         icon: b.verified
           ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
           : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+      });
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="font-size:13px">
+            <strong>${b.name}</strong><br/>
+            ${b.hours || ''}<br/>
+            ${b.contact || ''}<br/>
+            <span style="color:${b.verified ? '#166534' : '#6b7280'}">
+              ${b.verified ? 'Verified Business' : 'User Submitted'}
+            </span>
+          </div>
+        `
+      });
+
+      marker.addListener('mouseover', () => {
+        infoWindow.open(this.map, marker);
+      });
+
+      marker.addListener('mouseout', () => {
+        infoWindow.close();
       });
 
       this.markers.push(marker);
@@ -141,10 +182,7 @@ export class MapComponent implements AfterViewInit {
       geocoder.geocode({ address }, (results: any, status: any) => {
         if (status === 'OK' && results[0]) {
           const location = results[0].geometry.location;
-          resolve({
-            lat: location.lat(),
-            lng: location.lng()
-          });
+          resolve({ lat: location.lat(), lng: location.lng() });
         } else {
           reject(status);
         }
@@ -159,12 +197,20 @@ export class MapComponent implements AfterViewInit {
     this.showAddPopup = true;
   }
 
+  openUpdatePopup() {
+    const b = this.businesses[this.selectedUpdateIndex];
+    this.updateForm.hours = b.hours || '';
+    this.updateForm.contact = b.contact || '';
+    this.showUpdatePopup = true;
+  }
+
   openDeletePopup() {
     this.showDeletePopup = true;
   }
 
   closePopups() {
     this.showAddPopup = false;
+    this.showUpdatePopup = false;
     this.showDeletePopup = false;
   }
 
@@ -202,23 +248,40 @@ export class MapComponent implements AfterViewInit {
         name: this.newBusiness.name,
         category: this.newBusiness.category,
         verified: this.newBusiness.verified,
+        hours: this.newBusiness.hours,
+        contact: this.newBusiness.contact,
         lat: coords.lat,
         lng: coords.lng
       });
 
-      // Reset form
       this.newBusiness = {
         name: '',
         address: '',
         category: '',
-        verified: false
+        verified: false,
+        hours: '',
+        contact: ''
       };
 
       this.closePopups();
-      this.filterBusinesses(); // keep search in sync
+      this.filterBusinesses();
     } catch {
       alert('Could not find that address.');
     }
+  }
+
+  // --------------------------
+  // UPDATE BUSINESS
+  // --------------------------
+  updateBusiness() {
+    const b = this.businesses[this.selectedUpdateIndex];
+
+    if (this.updateForm.hours) b.hours = this.updateForm.hours;
+    if (this.updateForm.contact) b.contact = this.updateForm.contact;
+
+    this.updateForm = { hours: '', contact: '' };
+    this.closePopups();
+    this.renderMarkers();
   }
 
   // --------------------------
@@ -227,7 +290,7 @@ export class MapComponent implements AfterViewInit {
   deleteBusiness() {
     this.businesses.splice(this.selectedBusinessIndex, 1);
     this.closePopups();
-    this.filterBusinesses(); // keep search in sync
+    this.filterBusinesses();
   }
 
   // --------------------------
@@ -238,4 +301,3 @@ export class MapComponent implements AfterViewInit {
     this.router.navigate(['/']);
   }
 }
-
