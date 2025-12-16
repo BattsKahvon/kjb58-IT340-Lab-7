@@ -1,5 +1,62 @@
-<div class="map-toolbar">
-  <input type="text" placeholder="Search Newark businesses..." />
+<!-- GREENBOOK SIDEBAR -->
+<div class="sidebar" *ngIf="sidebarOpen">
+  <div class="sidebar-header">
+    <h2 class="brand">GreenBook</h2>
+    <button class="close-btn" (click)="toggleSidebar()">✕</button>
+  </div>
+
+  <button class="sidebar-btn" (click)="openAddPopup()"> Add Business</button>
+  <button class="sidebar-btn danger" (click)="openDeletePopup()"> Delete Business</button>
+  <button class="sidebar-btn logout" (click)="logout()"> Log Out</button>
+
+</div>
+<!-- TOP SEARCH BAR (WHEN SIDEBAR CLOSED) -->
+<div class="top-search" *ngIf="!sidebarOpen">
+  <button class="hamburger-btn" (click)="toggleSidebar()">☰</button>
+  <input
+  type="text"
+  placeholder="Search GreenBook businesses"
+  [(ngModel)]="searchQuery"
+  (input)="filterBusinesses()"/>
+</div>
+<!-- MAP CONTAINER -->
+<div id="map"></div>
+
+<!-- ADD BUSINESS POPUP -->
+<div class="popup" *ngIf="showAddPopup">
+  <div class="popup-content">
+    <h3>Add Business</h3>
+
+    <input placeholder="Name" [(ngModel)]="newBusiness.name">
+    <input placeholder="Category" [(ngModel)]="newBusiness.category">
+    <input placeholder="Street Address (Example Adress)" [(ngModel)]="newBusiness.address">
+
+    <label class="checkbox">
+      <input type="checkbox" [(ngModel)]="newBusiness.verified">
+      Verified
+    </label>
+
+    <div class="popup-actions">
+      <button (click)="addBusiness()">Add</button>
+      <button class="cancel" (click)="closePopups()">Cancel</button>
+    </div>
+  </div>
 </div>
 
-<div id="map"></div>
+<!-- DELETE BUSINESS POPUP -->
+<div class="popup" *ngIf="showDeletePopup">
+  <div class="popup-content">
+    <h3>Delete Business</h3>
+
+    <select [(ngModel)]="selectedBusinessIndex">
+      <option *ngFor="let b of businesses; let i = index" [value]="i">
+        {{ b.name }}
+      </option>
+    </select>
+
+    <div class="popup-actions">
+      <button class="danger" (click)="deleteBusiness()">Delete</button>
+      <button class="cancel" (click)="closePopups()">Cancel</button>
+    </div>
+  </div>
+</div>
