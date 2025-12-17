@@ -1,8 +1,8 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from './api.service';
-import { RouterModule } from '@angular/router'; // ✅ NEW
-import { Router } from '@angular/router'; // NEW
+import { RouterModule } from '@angular/router';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -15,27 +15,25 @@ export class AppComponent {
 
   message: string = '';
 
-  isLoginPopupVisible: boolean = false;
-  isRegisterPopupVisible: boolean = false;
+  isLoginPopupVisible = false;
+  isRegisterPopupVisible = false;
 
-  isLoggedIn: boolean = false; // ✅ NEW
+  isLoggedIn = false;
 
   constructor(
     private api: ApiService,
-    private router: Router // ✅ NEW
+    private router: Router
   ) {
 
-    // Restore login state on refresh
-    this.isLoggedIn = localStorage.getItem('loggedIn') === 'true'; // ✅ NEW
+    // Restore auth state
+    this.isLoggedIn = localStorage.getItem('loggedIn') === 'true';
 
-    // Test backend connectivity
+    // Backend connectivity test
     this.api.getMessage().subscribe({
       next: (res) => {
-        console.log('Backend says:', res);
         this.message = res.message || 'No message';
       },
-      error: (err) => {
-        console.error('Backend error:', err);
+      error: () => {
         this.message = 'Backend failed to connect';
       }
     });
@@ -51,23 +49,22 @@ export class AppComponent {
     const confirm = (document.getElementById('reg-confirm-password') as HTMLInputElement).value;
 
     if (!username || !email || !password) {
-      alert("All fields required.");
+      alert('All fields required.');
       return;
     }
+
     if (password !== confirm) {
-      alert("Passwords do not match!");
+      alert('Passwords do not match!');
       return;
     }
 
     this.api.registerUser({ username, email, password }).subscribe({
-      next: (res) => {
-        console.log("REGISTER SUCCESS:", res);
-        alert("Registration successful!");
+      next: () => {
+        alert('Registration successful!');
         this.closeRegisterPopup();
       },
-      error: (err) => {
-        console.error("REGISTER ERROR:", err);
-        alert("Registration failed.");
+      error: () => {
+        alert('Registration failed.');
       }
     });
   }
@@ -80,44 +77,56 @@ export class AppComponent {
     const password = (document.getElementById('password') as HTMLInputElement).value;
 
     if (!username || !password) {
-      alert("Both fields required.");
+      alert('Both fields required.');
       return;
     }
 
     this.api.loginUser({ username, password }).subscribe({
-      next: (res) => {
-        console.log("LOGIN SUCCESS:", res);
-        alert("Login successful!");
-
-        // ✅ AUTH STATE
+      next: () => {
         this.isLoggedIn = true;
+
+        // ✅ AUTH FLAGS
         localStorage.setItem('loggedIn', 'true');
+        localStorage.removeItem('isGuest');
 
         this.closeLoginPopup();
-
-        // ✅ REDIRECT TO MAP
         this.router.navigate(['/map']);
       },
-      error: (err) => {
-        console.error("LOGIN ERROR:", err);
-        alert("Invalid username or password.");
+      error: () => {
+        alert('Invalid username or password.');
       }
     });
   }
 
+// --------------------------
+// NAVIGATION
+// --------------------------
+goToMap() {
+  this.router.navigate(['/map']);
+}
+
   // --------------------------
-  // LOGOUT (optional but good)
+  // ✅ GUEST EXPLORE
+  // --------------------------
+  exploreAsGuest() {
+    localStorage.setItem('isGuest', 'true');
+    localStorage.removeItem('loggedIn');
+    this.router.navigate(['/map']);
+  }
+
+  // --------------------------
+  // LOGOUT
   // --------------------------
   logoutUser() {
     this.isLoggedIn = false;
     localStorage.removeItem('loggedIn');
+    localStorage.removeItem('isGuest');
     this.router.navigate(['/']);
   }
 
   // --------------------------
-  // Popup Logic
+  // POPUP LOGIC
   // --------------------------
-
   private findMatchingButton(target: HTMLElement | null, selector: string): boolean {
     let current: HTMLElement | null = target;
     while (current) {
@@ -138,8 +147,10 @@ export class AppComponent {
       return;
     }
 
-    if (this.findMatchingButton(el, '.login-nav-button') ||
-        this.findMatchingButton(el, '.login-cta')) {
+    if (
+      this.findMatchingButton(el, '.login-nav-button') ||
+      this.findMatchingButton(el, '.login-cta')
+    ) {
       this.openLoginPopup();
       return;
     }
@@ -168,3 +179,4 @@ export class AppComponent {
     this.isRegisterPopupVisible = false;
   }
 }
+	
