@@ -1,23 +1,42 @@
-<!-- GREENBOOK SIDEBAR -->
+<!-- =========================
+     SIDEBAR (EVERYONE)
+     ========================= -->
 <div class="sidebar" *ngIf="sidebarOpen">
   <div class="sidebar-header">
     <h2 class="brand">GreenBook</h2>
+
+    <!-- ❌ CLOSE SIDEBAR (EVERYONE) -->
     <button class="close-btn" (click)="toggleSidebar()">✕</button>
   </div>
 
-  <button class="sidebar-btn" (click)="openAddPopup()">Add Business</button>
+  <!-- =========================
+       LOGGED-IN CONTROLS
+       ========================= -->
+  <ng-container *ngIf="isLoggedIn">
+    <button class="sidebar-btn" (click)="openAddPopup()">Add Business</button>
+    <button class="sidebar-btn" (click)="openUpdatePopup()">Update Business</button>
+    <button class="sidebar-btn danger" (click)="openDeletePopup()">Delete Business</button>
+    <button class="sidebar-btn logout" (click)="logout()">Log Out</button>
+  </ng-container>
 
-  <!-- ✅ NEW: UPDATE BUSINESS -->
-  <button class="sidebar-btn" (click)="openUpdatePopup()">Update Business</button>
-
-  <button class="sidebar-btn danger" (click)="openDeletePopup()">Delete Business</button>
-
-  <button class="sidebar-btn logout" (click)="logout()">Log Out</button>
+  <!-- =========================
+       GUEST CONTROL
+       ========================= -->
+  <ng-container *ngIf="isGuest">
+    <button class="sidebar-btn login" (click)="goToLogin()">
+      Log In
+    </button>
+  </ng-container>
 </div>
 
-<!-- TOP SEARCH BAR (WHEN SIDEBAR CLOSED) -->
+<!-- =========================
+     TOP BAR (WHEN SIDEBAR CLOSED)
+     ========================= -->
 <div class="top-search" *ngIf="!sidebarOpen">
+  <!-- ☰ OPEN SIDEBAR (EVERYONE) -->
   <button class="hamburger-btn" (click)="toggleSidebar()">☰</button>
+
+  <!-- SEARCH (EVERYONE) -->
   <input
     type="text"
     placeholder="Search GreenBook businesses"
@@ -26,17 +45,21 @@
   />
 </div>
 
-<!-- MAP CONTAINER -->
+<!-- =========================
+     MAP (EVERYONE)
+     ========================= -->
 <div id="map"></div>
 
-<!-- ADD BUSINESS POPUP -->
-<div class="popup" *ngIf="showAddPopup">
+<!-- =========================
+     ADD BUSINESS (LOGGED-IN)
+     ========================= -->
+<div class="popup" *ngIf="showAddPopup && isLoggedIn">
   <div class="popup-content">
     <h3>Add Business</h3>
 
     <input placeholder="Name" [(ngModel)]="newBusiness.name">
     <input placeholder="Category" [(ngModel)]="newBusiness.category">
-    <input placeholder="Street Address (Example Address)" [(ngModel)]="newBusiness.address">
+    <input placeholder="Street Address" [(ngModel)]="newBusiness.address">
     <input placeholder="Hours" [(ngModel)]="newBusiness.hours">
     <input placeholder="Contact Info" [(ngModel)]="newBusiness.contact">
 
@@ -52,28 +75,21 @@
   </div>
 </div>
 
-<!-- ✅ UPDATE BUSINESS POPUP -->
-<div class="popup" *ngIf="showUpdatePopup">
+<!-- =========================
+     UPDATE BUSINESS (LOGGED-IN)
+     ========================= -->
+<div class="popup" *ngIf="showUpdatePopup && isLoggedIn">
   <div class="popup-content">
     <h3>Update Business</h3>
 
-    <!-- SELECT BUSINESS -->
     <select [(ngModel)]="selectedUpdateIndex">
       <option *ngFor="let b of businesses; let i = index" [value]="i">
         {{ b.name }}
       </option>
     </select>
 
-    <!-- UPDATE FIELDS -->
-    <input
-      placeholder="Updated Hours"
-      [(ngModel)]="updateForm.hours"
-    />
-
-    <input
-      placeholder="Updated Contact Info"
-      [(ngModel)]="updateForm.contact"
-    />
+    <input placeholder="Updated Hours" [(ngModel)]="updateForm.hours">
+    <input placeholder="Updated Contact Info" [(ngModel)]="updateForm.contact">
 
     <div class="popup-actions">
       <button (click)="updateBusiness()">Update</button>
@@ -82,8 +98,10 @@
   </div>
 </div>
 
-<!-- DELETE BUSINESS POPUP -->
-<div class="popup" *ngIf="showDeletePopup">
+<!-- =========================
+     DELETE BUSINESS (LOGGED-IN)
+     ========================= -->
+<div class="popup" *ngIf="showDeletePopup && isLoggedIn">
   <div class="popup-content">
     <h3>Delete Business</h3>
 

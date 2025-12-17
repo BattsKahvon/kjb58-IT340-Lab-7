@@ -16,6 +16,12 @@ declare const google: any;
 export class MapComponent implements AfterViewInit {
 
   // --------------------------
+  // AUTH STATE
+  // --------------------------
+  isLoggedIn = false;
+  isGuest = false;
+
+  // --------------------------
   // MAP STATE
   // --------------------------
   map: any;
@@ -68,9 +74,27 @@ export class MapComponent implements AfterViewInit {
   ) {}
 
   // --------------------------
-  // INIT MAP + LOAD BUSINESSES
+  // 🔐 AUTH SYNC (KEY FIX)
+  // --------------------------
+  syncAuthState() {
+    this.isLoggedIn = localStorage.getItem('loggedIn') === 'true';
+
+    // If user is NOT logged in, we treat them as guest
+    // (even if localStorage flag is missing) so the guest button never disappears.
+    const storedGuest = localStorage.getItem('isGuest') === 'true';
+    this.isGuest = !this.isLoggedIn && (storedGuest || true);
+
+    // Optional: keep localStorage consistent
+    if (!this.isLoggedIn) localStorage.setItem('isGuest', 'true');
+    if (this.isLoggedIn) localStorage.removeItem('isGuest');
+  }
+
+  // --------------------------
+  // INIT MAP + AUTH STATE + LOAD BUSINESSES
   // --------------------------
   ngAfterViewInit(): void {
+    this.syncAuthState();
+
     const mapDiv = document.getElementById('map');
     if (!mapDiv || typeof google === 'undefined') return;
 
@@ -98,7 +122,7 @@ export class MapComponent implements AfterViewInit {
   }
 
   // --------------------------
-  // MARKER RENDERING
+  // MARKER RENDERING (WITH HOVER INFO)
   // --------------------------
   renderMarkers() {
     this.markers.forEach(m => m.setMap(null));
@@ -150,7 +174,7 @@ export class MapComponent implements AfterViewInit {
       this.filteredBusinesses = [...this.businesses];
     } else {
       this.filteredBusinesses = this.businesses.filter(b =>
-        b.name.toLowerCase().includes(query)
+        (b.name || '').toLowerCase().includes(query)
       );
     }
 
@@ -179,20 +203,29 @@ export class MapComponent implements AfterViewInit {
   }
 
   // --------------------------
-  // SIDEBAR / POPUPS
+  // SIDEBAR / POPUPS (LOGGED-IN ONLY)
   // --------------------------
   openAddPopup() {
+    if (!this.isLoggedIn) return;
     this.showAddPopup = true;
   }
 
   openUpdatePopup() {
+    if (!this.isLoggedIn) return;
+
     const b = this.businesses[this.selectedUpdateIndex];
+    if (!b) {
+      alert('No business selected.');
+      return;
+    }
+
     this.updateForm.hours = b.hours || '';
     this.updateForm.contact = b.contact || '';
     this.showUpdatePopup = true;
   }
 
   openDeletePopup() {
+    if (!this.isLoggedIn) return;
     this.showDeletePopup = true;
   }
 
@@ -202,7 +235,12 @@ export class MapComponent implements AfterViewInit {
     this.showDeletePopup = false;
   }
 
+  // --------------------------
+  // SIDEBAR TOGGLE (EVERYONE)
+  // --------------------------
   toggleSidebar() {
+    this.syncAuthState(); // ✅ refresh state so guest login button never disappears
+
     this.sidebarOpen = !this.sidebarOpen;
 
     const mapDiv = document.getElementById('map');
@@ -222,6 +260,8 @@ export class MapComponent implements AfterViewInit {
   // ADD BUSINESS (BACKEND)
   // --------------------------
   async addBusiness() {
+    if (!this.isLoggedIn) return;
+
     if (!this.newBusiness.name || !this.newBusiness.address) {
       alert('Name and address are required');
       return;
@@ -243,10 +283,16 @@ export class MapComponent implements AfterViewInit {
         contact: this.newBusiness.contact
       };
 
-      this.api.addBusiness(payload).subscribe((saved) => {
-        this.businesses.push(saved);
-        this.filterBusinesses();
-        this.closePopups();
+      this.api.addBusiness(payload).subscribe({
+        next: (saved) => {
+          this.businesses.push(saved);
+          this.filterBusinesses();
+          this.closePopups();
+        },
+        error: (err) => {
+          console.error('Add business failed', err);
+          alert('Failed to save business.');
+        }
       });
 
       this.newBusiness = {
@@ -267,27 +313,60 @@ export class MapComponent implements AfterViewInit {
   // UPDATE BUSINESS (BACKEND)
   // --------------------------
   updateBusiness() {
-    const b = this.businesses[this.selectedUpdateIndex];
+    if (!this.isLoggedIn) return;
 
-    this.api.updateBusiness(b._id, this.updateForm)
-      .subscribe((updated) => {
+    const b = this.businesses[this.selectedUpdateIndex];
+    if (!b || !b._id) {
+      alert('No business selected.');
+      return;
+    }
+
+    this.api.updateBusiness(b._id, this.updateForm).subscribe({
+      next: (updated) => {
         this.businesses[this.selectedUpdateIndex] = updated;
         this.filterBusinesses();
         this.closePopups();
-      });
+      },
+      error: (err) => {
+        console.error('Update business failed', err);
+        alert('Failed to update business.');
+      }
+    });
   }
 
   // --------------------------
   // DELETE BUSINESS (BACKEND)
   // --------------------------
   deleteBusiness() {
-    const b = this.businesses[this.selectedBusinessIndex];
+    if (!this.isLoggedIn) return;
 
-    this.api.deleteBusiness(b._id).subscribe(() => {
-      this.businesses.splice(this.selectedBusinessIndex, 1);
-      this.filterBusinesses();
-      this.closePopups();
+    const b = this.businesses[this.selectedBusinessIndex];
+    if (!b || !b._id) {
+      alert('No business selected.');
+      return;
+    }
+
+    this.api.deleteBusiness(b._id).subscribe({
+      next: () => {
+        this.businesses.splice(this.selectedBusinessIndex, 1);
+        this.filterBusinesses();
+        this.closePopups();
+      },
+      error: (err) => {
+        console.error('Delete business failed', err);
+        alert('Failed to delete business.');
+      }
     });
+  }
+
+  // --------------------------
+  // GUEST → LOGIN
+  // --------------------------
+  goToLogin() {
+    // keep guest flag consistent: they’re leaving map to login
+    localStorage.removeItem('isGuest');
+    this.syncAuthState();
+    this.router.navigate(['/']);
   }
 
   // --------------------------
@@ -295,6 +374,8 @@ export class MapComponent implements AfterViewInit {
   // --------------------------
   logout() {
     localStorage.removeItem('loggedIn');
+    localStorage.setItem('isGuest', 'true'); // go back to guest default
+    this.syncAuthState();
     this.router.navigate(['/']);
   }
 }
