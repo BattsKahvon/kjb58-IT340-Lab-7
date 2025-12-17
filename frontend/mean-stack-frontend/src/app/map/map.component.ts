@@ -2,6 +2,7 @@ import { Component, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ApiService } from '../api.service';
 
 declare const google: any;
 
@@ -25,10 +26,10 @@ export class MapComponent implements AfterViewInit {
   // --------------------------
   sidebarOpen = true;
   showAddPopup = false;
-  showUpdatePopup = false;   // ✅ NEW
+  showUpdatePopup = false;
   showDeletePopup = false;
   selectedBusinessIndex = 0;
-  selectedUpdateIndex = 0;   // ✅ NEW
+  selectedUpdateIndex = 0;
 
   // --------------------------
   // SEARCH STATE (NAME ONLY)
@@ -37,37 +38,9 @@ export class MapComponent implements AfterViewInit {
   filteredBusinesses: any[] = [];
 
   // --------------------------
-  // BUSINESS DATA (SOURCE OF TRUTH)
+  // BUSINESS DATA (FROM BACKEND)
   // --------------------------
-  businesses = [
-    {
-      name: "Hobby’s Delicatessen",
-      lat: 40.7429,
-      lng: -74.1725,
-      category: "Restaurant",
-      verified: true,
-      hours: "Mon–Fri 9am–5pm",
-      contact: "(973) 555-1234"
-    },
-    {
-      name: "Baraka City Hall",
-      lat: 40.7357,
-      lng: -74.1724,
-      category: "Community",
-      verified: true,
-      hours: "Mon–Sat 10am–6pm",
-      contact: "info@barakanewark.org"
-    },
-    {
-      name: "Newark Symphony Hall",
-      lat: 40.7413,
-      lng: -74.1687,
-      category: "Arts",
-      verified: false,
-      hours: "Event-based",
-      contact: "973-555-9876"
-    }
-  ];
+  businesses: any[] = [];
 
   // --------------------------
   // NEW BUSINESS FORM MODEL
@@ -89,18 +62,20 @@ export class MapComponent implements AfterViewInit {
     contact: ''
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private api: ApiService
+  ) {}
 
   // --------------------------
-  // INIT MAP (POIs HIDDEN)
+  // INIT MAP + LOAD BUSINESSES
   // --------------------------
   ngAfterViewInit(): void {
     const mapDiv = document.getElementById('map');
-
     if (!mapDiv || typeof google === 'undefined') return;
 
     this.map = new google.maps.Map(mapDiv, {
-      center: { lat: 40.7446, lng: -74.1802 },
+      center: { lat: 40.7446, lng: -74.1802 }, // Newark
       zoom: 14,
       styles: [
         { featureType: 'poi', stylers: [{ visibility: 'off' }] },
@@ -108,8 +83,18 @@ export class MapComponent implements AfterViewInit {
       ]
     });
 
-    this.filteredBusinesses = [...this.businesses];
-    this.renderMarkers();
+    // 🔹 Load businesses from backend
+    this.api.getBusinesses().subscribe({
+      next: (data) => {
+        this.businesses = data;
+        this.filteredBusinesses = [...this.businesses];
+        this.renderMarkers();
+      },
+      error: (err) => {
+        console.error('Failed to load businesses', err);
+        alert('Could not load businesses from backend');
+      }
+    });
   }
 
   // --------------------------
@@ -182,7 +167,10 @@ export class MapComponent implements AfterViewInit {
       geocoder.geocode({ address }, (results: any, status: any) => {
         if (status === 'OK' && results[0]) {
           const location = results[0].geometry.location;
-          resolve({ lat: location.lat(), lng: location.lng() });
+          resolve({
+            lat: location.lat(),
+            lng: location.lng()
+          });
         } else {
           reject(status);
         }
@@ -231,7 +219,7 @@ export class MapComponent implements AfterViewInit {
   }
 
   // --------------------------
-  // ADD BUSINESS
+  // ADD BUSINESS (BACKEND)
   // --------------------------
   async addBusiness() {
     if (!this.newBusiness.name || !this.newBusiness.address) {
@@ -244,14 +232,21 @@ export class MapComponent implements AfterViewInit {
         this.newBusiness.address + ', Newark, NJ'
       );
 
-      this.businesses.push({
+      const payload = {
         name: this.newBusiness.name,
         category: this.newBusiness.category,
+        address: this.newBusiness.address,
+        lat: coords.lat,
+        lng: coords.lng,
         verified: this.newBusiness.verified,
         hours: this.newBusiness.hours,
-        contact: this.newBusiness.contact,
-        lat: coords.lat,
-        lng: coords.lng
+        contact: this.newBusiness.contact
+      };
+
+      this.api.addBusiness(payload).subscribe((saved) => {
+        this.businesses.push(saved);
+        this.filterBusinesses();
+        this.closePopups();
       });
 
       this.newBusiness = {
@@ -263,34 +258,36 @@ export class MapComponent implements AfterViewInit {
         contact: ''
       };
 
-      this.closePopups();
-      this.filterBusinesses();
     } catch {
       alert('Could not find that address.');
     }
   }
 
   // --------------------------
-  // UPDATE BUSINESS
+  // UPDATE BUSINESS (BACKEND)
   // --------------------------
   updateBusiness() {
     const b = this.businesses[this.selectedUpdateIndex];
 
-    if (this.updateForm.hours) b.hours = this.updateForm.hours;
-    if (this.updateForm.contact) b.contact = this.updateForm.contact;
-
-    this.updateForm = { hours: '', contact: '' };
-    this.closePopups();
-    this.renderMarkers();
+    this.api.updateBusiness(b._id, this.updateForm)
+      .subscribe((updated) => {
+        this.businesses[this.selectedUpdateIndex] = updated;
+        this.filterBusinesses();
+        this.closePopups();
+      });
   }
 
   // --------------------------
-  // DELETE BUSINESS
+  // DELETE BUSINESS (BACKEND)
   // --------------------------
   deleteBusiness() {
-    this.businesses.splice(this.selectedBusinessIndex, 1);
-    this.closePopups();
-    this.filterBusinesses();
+    const b = this.businesses[this.selectedBusinessIndex];
+
+    this.api.deleteBusiness(b._id).subscribe(() => {
+      this.businesses.splice(this.selectedBusinessIndex, 1);
+      this.filterBusinesses();
+      this.closePopups();
+    });
   }
 
   // --------------------------
